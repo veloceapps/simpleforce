@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/pkg/errors"
 	"html"
 	"io"
 	"io/ioutil"
@@ -12,12 +13,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
 const (
-	DefaultAPIVersion = "43.0"
-	DefaultClientID   = "simpleforce"
+	DefaultAPIVersion = "51.0"
+	DefaultClientID   = "PlatformCLI" // to match SFDX
+	DefaultRedirectURI = `http://localhost:1717/OauthRedirect` // to match SFDX
 	DefaultURL        = "https://login.salesforce.com"
 
 	logPrefix = "[simpleforce]"
@@ -134,6 +137,51 @@ func (client *Client) SObject(typeName ...string) *SObject {
 // isLoggedIn returns if the login to salesforce is successful.
 func (client *Client) isLoggedIn() bool {
 	return client.sessionID != ""
+}
+
+type BearerTokenResponse struct {
+	AccessToken string    `json:"access_token"`
+	InstanceURL string    `json:"instance_url"`
+}
+
+func (client *Client) LoginWithAuthCode(loginURL string, code string) error {
+	endpoint := fmt.Sprintf(`%s/services/oauth2/token`, loginURL)
+	data := url.Values{}
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
+	data.Set("client_id", DefaultClientID)
+	data.Set("redirect_uri", DefaultRedirectURI)
+
+	c := &http.Client{}
+	r, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode())) // URL-encoded payload
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	res, err := c.Do(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(res.Status)
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	//{"access_token":"00D8AXXXX","refresh_token":"5Aep861X_XXXX","signature":"1TYHTXXX","scope":"refresh_token web api id full","id_token":"eyJraWQiOiIyXXXX","instance_url":"https://computing-efficiency-2574-dev-ed.cs45.my.salesforce.com","id":"https://test.salesforce.com/id/00D8A000000MWVeUAO/0058A000008yLsfQAE","token_type":"Bearer","issued_at":"1636385425594"}
+	var response BearerTokenResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return err
+	}
+	if response.AccessToken == "" {
+		return errors.New("Authentication failed")
+	}
+	client.sessionID = response.AccessToken
+	client.instanceURL = parseHost(response.InstanceURL)
+	return nil
 }
 
 // LoginPassword signs into salesforce using password. token is optional if trusted IP is configured.
