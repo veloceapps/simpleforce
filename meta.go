@@ -51,6 +51,7 @@ func (c *Client) MetaDeploy(zip []byte, testLevel string) (*MetaDeployResult, er
 	var fw io.Writer
 	var err error
 
+
 	// Add descriptor
 	sr := strings.NewReader(fmt.Sprintf(`{
     "deployOptions" : {
@@ -130,14 +131,14 @@ func (c *Client) MetaDeploy(zip []byte, testLevel string) (*MetaDeployResult, er
 
 	maxWait := 120;
 	for {
+		if mr.DeployResult.Done {
+			break
+		}
 		maxWait--;
 		if maxWait <= 0 {
 			mr.DeployResult.Success = false
 			mr.DeployResult.ErrorMessage = "Timeout while waiting for result"
 			break;
-		}
-		if mr.DeployResult.Done {
-			break
 		}
 		url = fmt.Sprintf("%s/services/data/v%s/metadata/deployRequest/%s?includeDetails=true", c.instanceURL, DefaultAPIVersion, mr.ID)
 		//req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.sessionID))
@@ -148,6 +149,9 @@ func (c *Client) MetaDeploy(zip []byte, testLevel string) (*MetaDeployResult, er
 		err = json.Unmarshal(resBytes, &mr)
 		if err != nil {
 			return &MetaDeployResult{Success: false}, err
+		}
+		if mr.DeployResult.Done {
+			break
 		}
 		time.Sleep(1*time.Second)
 	}

@@ -7,7 +7,12 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // ExecuteAnonymousResult is returned by ExecuteAnonymous function
 type CreateScratchResult struct {
@@ -176,6 +181,7 @@ func (client *Client) CreateScratch(name string, adminEmail string, features str
 	// APPLY Security settings to allow authorizing without 2FA
 	/* zip layout:
 	package.xml
+	settings/Quote.settings
 	settings/Security.settings
 	*/
 	buf := new(bytes.Buffer)
@@ -187,6 +193,7 @@ func (client *Client) CreateScratch(name string, adminEmail string, features str
 		Name, Body string
 	}{
 		{"package.xml", ScratchPackageXML},
+		{"settings/Quote.settings", ScratchQuoteSettingsMeta},
 		{"settings/Security.settings", ScratchSecuritySettingsMeta},
 	}
 	for _, file := range files {
@@ -206,7 +213,7 @@ func (client *Client) CreateScratch(name string, adminEmail string, features str
 		return &CreateScratchResult{Success: false}, err
 	}
 
-	_, err = scratchClient.MetaDeploy(buf.Bytes(), "NoTestRun")
+	_, err = scratchClient.MetaDeploy(buf.Bytes(),"NoTestRun")
 	if err != nil {
 		return &CreateScratchResult{Success: false}, err
 	}
@@ -233,6 +240,12 @@ func (client *Client) RemoveScratch(name string) (*RemoveScratchResult, error) {
 
 	return &RemoveScratchResult{Success: true}, nil
 }
+
+const ScratchQuoteSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
+<QuoteSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <enableQuote>true</enableQuote>
+</QuoteSettings>`
+
 
 const ScratchSecuritySettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <SecuritySettings xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -1583,6 +1596,10 @@ const ScratchPackageXML = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>Security</members>
+        <name>Settings</name>
+    </types>
+    <types>
+        <members>Quote</members>
         <name>Settings</name>
     </types>
     <version>53.0</version>

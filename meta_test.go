@@ -1400,7 +1400,7 @@ func TestClient_MetaDeploy(t *testing.T) {
 	//write the zipped file to the disk
 	//ioutil.WriteFile("/tmp/deploy.zip", buf.Bytes(), 0777)
 
-	result, err := client.MetaDeploy(buf.Bytes(), "NoTestRun")
+	result, err := client.MetaDeploy(buf.Bytes(),"NoTestRun")
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		t.FailNow()
