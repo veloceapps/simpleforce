@@ -2,7 +2,7 @@
 
 A simple Golang client for Salesforce
 
-[![GoDoc](https://godoc.org/github.com/simpleforce/simpleforce?status.svg)](https://godoc.org/github.com/simpleforce/simpleforce)
+[![GoDoc](https://godoc.org/github.com/veloceapps/simpleforce?status.svg)](https://godoc.org/github.com/veloceapps/simpleforce)
 
 ## Features
 
@@ -25,7 +25,7 @@ Most of the implementation referenced Salesforce documentation here: https://dev
 `simpleforce` can be acquired as any other Go libraries via `go get`:
 
 ```
-go get github.com/simpleforce/simpleforce
+go get github.com/veloceapps/simpleforce
 ```
 
 ## Quick Start
@@ -38,7 +38,7 @@ A `client` instance is the main entrance to access Salesforce using simpleforce.
 ```go
 package main
 
-import "github.com/simpleforce/simpleforce"
+import "github.com/veloceapps/simpleforce"
 
 var (
 	sfURL      = "Custom or instance URL, for example, 'https://na01.salesforce.com/'"
@@ -79,7 +79,7 @@ package main
 
 import (
     "fmt"
-    "github.com/simpleforce/simpleforce"
+    "github.com/veloceapps/simpleforce"
 )
 
 func Query() {
@@ -113,7 +113,7 @@ package main
 
 import (
     "fmt"
-    "github.com/simpleforce/simpleforce"
+    "github.com/veloceapps/simpleforce"
 )
 
 func WorkWithRecords() {
