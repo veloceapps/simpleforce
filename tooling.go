@@ -2,6 +2,7 @@ package simpleforce
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -49,6 +50,20 @@ func (client *Client) ExecuteAnonymous(apexBody string) (*ExecuteAnonymousResult
 	err = json.Unmarshal(data, &result)
 	if err != nil {
 		return nil, err
+	}
+	if result.CompileProblem != nil {
+		return &ExecuteAnonymousResult{Success: false, ExceptionMessage: result.ExceptionMessage, ExceptionStackTrace: result.ExceptionStackTrace},
+			errors.New(fmt.Sprintf("%+v", result.CompileProblem))
+	}
+
+	if result.ExceptionMessage != nil {
+		return &ExecuteAnonymousResult{Success: false, ExceptionMessage: result.ExceptionMessage, ExceptionStackTrace: result.ExceptionStackTrace},
+			errors.New(fmt.Sprintf("%+v", result.ExceptionMessage))
+	}
+
+	if result.Success == false {
+		return &ExecuteAnonymousResult{Success: false, ExceptionMessage: result.ExceptionMessage, ExceptionStackTrace: result.ExceptionStackTrace},
+			errors.New("Unknown error")
 	}
 
 	return &result, nil
