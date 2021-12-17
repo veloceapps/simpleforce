@@ -22,6 +22,8 @@ type CreateScratchResult struct {
 	Pass                string      `json:"pass"`
 	AuthCode            string      `json:"authCode"`
 	Success             bool        `json:"success"`
+	ExpiresAt           string      `json:"expiresAt"`
+
 	ExceptionStackTrace interface{} `json:"exceptionStackTrace"`
 	ExceptionMessage    interface{} `json:"exceptionMessage"`
 }
@@ -136,6 +138,7 @@ func (client *Client) CreateScratch(name string, adminEmail string, features str
 	existingOrg := &result.Records[0]
 	output = CreateScratchResult{Success: true,
 		AuthCode: existingOrg.StringField("AuthCode"),
+		ExpiresAt: existingOrg.StringField("ExpirationDate"),
 		User: existingOrg.StringField("SignupUsername"),
 		LoginURL: existingOrg.StringField("LoginUrl"),
 		Features: existingOrg.StringField("Features"),
