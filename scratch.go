@@ -74,24 +74,24 @@ func generatePassword(passwordLength, minSpecialChar, minNum, minUpperCase int) 
 }
 
 // HasScratch creates scratch with given OrgName
-func (client *Client) HasScratch(name string) (bool, error) {
+func (client *Client) HasScratch(name string) (bool, string, error) {
 	if !client.isLoggedIn() {
-		return false, ErrAuthentication
+		return false, "", ErrAuthentication
 	}
 
 	// Query active org by OrgName first!
 	q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", name)
 	result, err := client.Query(q)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	if len(result.Records) > 0 {
 		if len(result.Records) > 1 {
-			return false, errors.New(fmt.Sprintf("More then one active org with OrgName: %s", name))
-		}
-		return true, nil
+			return false, "", errors.New(fmt.Sprintf("More then one active org with OrgName: %s", name))
+		}		
+		return true, result.Records[0].StringField('ExpirationDate'), nil
 	}
-	return false, nil
+	return false,"", nil
 }
 
 // CreateScratch creates scratch with given OrgName
