@@ -89,7 +89,7 @@ func (client *Client) HasScratch(name string) (bool, string, error) {
 		if len(result.Records) > 1 {
 			return false, "", errors.New(fmt.Sprintf("More then one active org with OrgName: %s", name))
 		}		
-		return true, result.Records[0].StringField('ExpirationDate'), nil
+		return true, result.Records[0].StringField("ExpirationDate"), nil
 	}
 	return false,"", nil
 }
