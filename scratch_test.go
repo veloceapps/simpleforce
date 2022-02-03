@@ -8,7 +8,7 @@ import (
 func TestClient_CreateScratch(t *testing.T) {
 	client := requireClient(t, true)
  // 	result, err := client.CreateOrRetrieveScratch("vk20 Scratch", "salesforce-environments@secret.com", "MultiCurrency;StateAndCountryPicklist", "+371 12345678", "Latvia") // for GP orgs
-	result, err := client.CreateScratch("vk20 Scratch", "salesforce-environments@xxxxxxxx.com", "", "+371 12345678", "Latvia") // for Cato
+	result, err := client.CreateScratch("vk20 Scratch", "cato-full@velocpq.com.0", "salesforce-environments@xxxxxxxx.com", "", "+371 12345678", "Latvia") // for Cato
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		t.FailNow()

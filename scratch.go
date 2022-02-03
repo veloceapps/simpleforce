@@ -90,14 +90,14 @@ func (client *Client) HasScratch(name string) (bool, string, error) {
 	if len(result.Records) > 0 {
 		if len(result.Records) > 1 {
 			return false, "", errors.New(fmt.Sprintf("More then one active org with OrgName: %s", name))
-		}		
+		}
 		return true, result.Records[0].StringField("ExpirationDate"), nil
 	}
 	return false,"", nil
 }
 
 // CreateScratch creates scratch with given OrgName
-func (client *Client) CreateScratch(name string, adminEmail string, features string, phone string, countryName string) (*CreateScratchResult, error) {
+func (client *Client) CreateScratch(name string, username string, adminEmail string, features string, phone string, countryName string) (*CreateScratchResult, error) {
 	if !client.isLoggedIn() {
 		return nil, ErrAuthentication
 	}
@@ -106,6 +106,7 @@ func (client *Client) CreateScratch(name string, adminEmail string, features str
       ScratchOrgInfo newScratch = new ScratchOrgInfo (
         OrgName = '%s',
         Edition = 'Developer',
+        Username = '%s',
         AdminEmail = '%s',
         ConnectedAppConsumerKey = '%s',
         ConnectedAppCallbackUrl = '%s',
@@ -114,7 +115,7 @@ func (client *Client) CreateScratch(name string, adminEmail string, features str
       );
       insert(newScratch);
     `
-	apexBody := fmt.Sprintf(apexBodyTemplate, name, adminEmail, DefaultClientID, DefaultRedirectURI, features)
+	apexBody := fmt.Sprintf(apexBodyTemplate, name, username, adminEmail, DefaultClientID, DefaultRedirectURI, features)
 	_, err := client.ExecuteAnonymous(apexBody)
 	if err != nil {
 		return nil, err
