@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -16,13 +17,13 @@ func init() {
 
 // ExecuteAnonymousResult is returned by ExecuteAnonymous function
 type CreateScratchResult struct {
-	Features            string      `json:"features"`
-	LoginURL            string      `json:"loginUrl"`
-	User                string      `json:"user"`
-	Pass                string      `json:"pass"`
-	AuthCode            string      `json:"authCode"`
-	Success             bool        `json:"success"`
-	ExpiresAt           string      `json:"expiresAt"`
+	Features  string `json:"features"`
+	LoginURL  string `json:"loginUrl"`
+	User      string `json:"user"`
+	Pass      string `json:"pass"`
+	AuthCode  string `json:"authCode"`
+	Success   bool   `json:"success"`
+	ExpiresAt string `json:"expiresAt"`
 
 	ExceptionStackTrace interface{} `json:"exceptionStackTrace"`
 	ExceptionMessage    interface{} `json:"exceptionMessage"`
@@ -93,16 +94,30 @@ func (client *Client) HasScratch(name string) (bool, string, error) {
 		}
 		return true, result.Records[0].StringField("ExpirationDate"), nil
 	}
-	return false,"", nil
+	return false, "", nil
 }
 
 // CreateScratch creates scratch with given OrgName
-func (client *Client) CreateScratch(name string, username string, adminEmail string, features string, phone string, countryName string) (*CreateScratchResult, error) {
+type CreateScratchParams struct {
+	Name        string
+	Username    string
+	AdminEmail  string
+	Features    string
+	Phone       string
+	CountryName string
+	Settings    ScratchSettings
+}
+
+type ScratchSettings struct {
+	EnableAuditFieldsInactiveOwner bool
+}
+
+func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchResult, error) {
 	if !client.isLoggedIn() {
 		return nil, ErrAuthentication
 	}
 
-	apexBodyTemplate:= `
+	apexBodyTemplate := `
       ScratchOrgInfo newScratch = new ScratchOrgInfo (
         OrgName = '%s',
         Edition = 'Developer',
@@ -115,21 +130,21 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
       );
       insert(newScratch);
     `
-	apexBody := fmt.Sprintf(apexBodyTemplate, name, username, adminEmail, DefaultClientID, DefaultRedirectURI, features)
+	apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features)
 	_, err := client.ExecuteAnonymous(apexBody)
 	if err != nil {
 		return nil, err
 	}
 
 	// Query newly created Org
-	q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", name)
+	q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", params.Name)
 	result, err := client.Query(q)
 	if err != nil {
 		return nil, err
 	}
 	var output CreateScratchResult
 	if len(result.Records) > 1 {
-		return nil, errors.New(fmt.Sprintf("More then one active org with OrgName: %s", name))
+		return nil, errors.New(fmt.Sprintf("More then one active org with OrgName: %s", params.Name))
 	}
 	if len(result.Records) == 0 {
 		return &CreateScratchResult{Success: false},
@@ -138,11 +153,11 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
 
 	existingOrg := &result.Records[0]
 	output = CreateScratchResult{Success: true,
-		AuthCode: existingOrg.StringField("AuthCode"),
+		AuthCode:  existingOrg.StringField("AuthCode"),
 		ExpiresAt: existingOrg.StringField("ExpirationDate"),
-		User: existingOrg.StringField("SignupUsername"),
-		LoginURL: existingOrg.StringField("LoginUrl"),
-		Features: existingOrg.StringField("Features"),
+		User:      existingOrg.StringField("SignupUsername"),
+		LoginURL:  existingOrg.StringField("LoginUrl"),
+		Features:  existingOrg.StringField("Features"),
 	}
 
 	scratchClient := NewClient(output.LoginURL, DefaultClientID, DefaultAPIVersion)
@@ -153,7 +168,7 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
 	}
 
 	// Set Scratch Password to be Random strong pass
-	pass := generatePassword(16, 2,2,2)
+	pass := generatePassword(16, 2, 2, 2)
 	apexBodyTemplate = `
       System.setPassword(userInfo.getUserId(),'%s');
     `
@@ -162,7 +177,7 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
 	if err != nil {
 		return &CreateScratchResult{Success: false}, err
 	}
-	output.Pass = pass;
+	output.Pass = pass
 
 	// Set Phone number in scratch to avoid prompts on UI
 	apexBodyTemplate = `
@@ -176,7 +191,7 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
 
       update user;
     `
-	apexBody = fmt.Sprintf(apexBodyTemplate, phone, countryName)
+	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)
 	_, err = scratchClient.ExecuteAnonymous(apexBody)
 	if err != nil {
 		return &CreateScratchResult{Success: false}, err
@@ -191,6 +206,10 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
 	buf := new(bytes.Buffer)
 	// Create a new zip archive.
 	zipWriter := zip.NewWriter(buf)
+	ScratchSecuritySettingsMeta := fmt.Sprintf(
+		ScratchSecuritySettingsMetaTpl,
+		strconv.FormatBool(params.Settings.EnableAuditFieldsInactiveOwner),
+	)
 
 	// Add some files to the archive.
 	var files = []struct {
@@ -217,7 +236,7 @@ func (client *Client) CreateScratch(name string, username string, adminEmail str
 		return &CreateScratchResult{Success: false}, err
 	}
 
-	_, err = scratchClient.MetaDeploy(buf.Bytes(),"NoTestRun")
+	_, err = scratchClient.MetaDeploy(buf.Bytes(), "NoTestRun")
 	if err != nil {
 		return &CreateScratchResult{Success: false}, err
 	}
@@ -231,7 +250,7 @@ func (client *Client) RemoveScratch(name string) (*RemoveScratchResult, error) {
 		return nil, ErrAuthentication
 	}
 
-	apexBodyTemplate:= `
+	apexBodyTemplate := `
       ScratchOrgInfo[] orgs = [SELECT Id FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 10];
       delete orgs;
     `
@@ -250,12 +269,11 @@ const ScratchQuoteSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
     <enableQuote>true</enableQuote>
 </QuoteSettings>`
 
-
-const ScratchSecuritySettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
+const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
 <SecuritySettings xmlns="http://soap.sforce.com/2006/04/metadata">
     <canUsersGrantLoginAccess>true</canUsersGrantLoginAccess>
     <enableAdminLoginAsAnyUser>false</enableAdminLoginAsAnyUser>
-    <enableAuditFieldsInactiveOwner>false</enableAuditFieldsInactiveOwner>
+    <enableAuditFieldsInactiveOwner>%s</enableAuditFieldsInactiveOwner>
     <enableAuraSecureEvalPref>true</enableAuraSecureEvalPref>
     <enableRequireHttpsConnection>true</enableRequireHttpsConnection>
     <networkAccess>

@@ -3,12 +3,24 @@ package simpleforce
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestClient_CreateScratch(t *testing.T) {
 	client := requireClient(t, true)
- // 	result, err := client.CreateOrRetrieveScratch("vk20 Scratch", "salesforce-environments@secret.com", "MultiCurrency;StateAndCountryPicklist", "+371 12345678", "Latvia") // for GP orgs
-	result, err := client.CreateScratch("vk20 Scratch", "cato-full@velocpq.com.0", "salesforce-environments@xxxxxxxx.com", "", "+371 12345678", "Latvia") // for Cato
+	// 	result, err := client.CreateOrRetrieveScratch("vk20 Scratch", "salesforce-environments@secret.com", "MultiCurrency;StateAndCountryPicklist", "+371 12345678", "Latvia") // for GP orgs
+	dateSuffix := time.Now().UTC().Format("0201-150405")
+	result, err := client.CreateScratch(CreateScratchParams{
+		Name:        "vk20 Scratch",
+		Username:    "cato-full@velocpq.com." + dateSuffix,
+		AdminEmail:  "salesforce-environments@xxxxxxxx.com",
+		Features:    "",
+		Phone:       "+371 12345678",
+		CountryName: "Latvia",
+		Settings: ScratchSettings{
+			EnableAuditFieldsInactiveOwner: true,
+		},
+	}) // for Cato
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		t.FailNow()
@@ -21,7 +33,7 @@ func TestClient_CreateScratch(t *testing.T) {
 
 func TestClient_HasScratch(t *testing.T) {
 	client := requireClient(t, true)
-	result, err := client.HasScratch("vk20 Scratch")
+	result, _, err := client.HasScratch("vk20 Scratch")
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		t.FailNow()
