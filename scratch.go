@@ -136,6 +136,8 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return nil, err
 	}
 
+	time.Sleep(5 * time.Second)
+
 	// Query newly created Org
 	q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", params.Name)
 	result, err := client.Query(q)
