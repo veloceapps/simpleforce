@@ -139,7 +139,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	getOrgTries := 0
 	result := &QueryResult{}
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 		getOrgTries++
 
 		// Query newly created Org

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/pkg/errors"
 	"html"
 	"io"
 	"io/ioutil"
@@ -15,13 +14,15 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const (
-	DefaultAPIVersion = "51.0"
-	DefaultClientID   = "PlatformCLI" // to match SFDX
+	DefaultAPIVersion  = "54.0"
+	DefaultClientID    = "PlatformCLI"                         // to match SFDX
 	DefaultRedirectURI = `http://localhost:1717/OauthRedirect` // to match SFDX
-	DefaultURL        = "https://login.salesforce.com"
+	DefaultURL         = "https://login.salesforce.com"
 
 	logPrefix = "[simpleforce]"
 )
@@ -53,7 +54,7 @@ type QueryResult struct {
 
 // Expose sid to save in admin settings
 func (client *Client) GetSid() (sid string) {
-        return client.sessionID
+	return client.sessionID
 }
 
 //Expose Loc to save in admin settings
@@ -63,8 +64,8 @@ func (client *Client) GetLoc() (loc string) {
 
 // Set SID and Loc as a means to log in without LoginPassword
 func (client *Client) SetSidLoc(sid string, loc string) {
-        client.sessionID = sid
-        client.instanceURL = loc
+	client.sessionID = sid
+	client.instanceURL = loc
 }
 
 // Query runs an SOQL query. q could either be the SOQL string or the nextRecordsURL.
@@ -140,8 +141,8 @@ func (client *Client) isLoggedIn() bool {
 }
 
 type BearerTokenResponse struct {
-	AccessToken string    `json:"access_token"`
-	InstanceURL string    `json:"instance_url"`
+	AccessToken string `json:"access_token"`
+	InstanceURL string `json:"instance_url"`
 }
 
 func (client *Client) LoginWithAuthCode(loginURL string, code string) error {
