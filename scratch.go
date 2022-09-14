@@ -139,7 +139,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	getOrgTries := 0
 	result := &QueryResult{}
 	for {
-		time.Sleep(15 * time.Second)
+		time.Sleep(10 * time.Second)
 		getOrgTries++
 
 		// Query newly created Org
@@ -153,7 +153,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		}
 
 		if len(result.Records) == 0 {
-			if getOrgTries > 5 {
+			if getOrgTries > 30 {
 				return &CreateScratchResult{Success: false},
 					fmt.Errorf("Org %s not Found after just created, tried %d times", params.Name, getOrgTries)
 			}
