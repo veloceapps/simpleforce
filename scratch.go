@@ -136,23 +136,33 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return nil, err
 	}
 
-	time.Sleep(5 * time.Second)
+	getOrgTries := 0
+	result := &QueryResult{}
+	for {
+		time.Sleep(5 * time.Second)
+		getOrgTries++
 
-	// Query newly created Org
-	q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", params.Name)
-	result, err := client.Query(q)
-	if err != nil {
-		return nil, err
+		// Query newly created Org
+		q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", params.Name)
+		result, err = client.Query(q)
+		if err != nil {
+			return nil, err
+		}
+		if len(result.Records) > 1 {
+			return nil, fmt.Errorf("More then one active org with OrgName: %s", params.Name)
+		}
+
+		if len(result.Records) == 0 {
+			if getOrgTries > 5 {
+				return &CreateScratchResult{Success: false},
+					fmt.Errorf("Org %s not Found after just created, tried %d times", params.Name, getOrgTries)
+			}
+			continue
+		}
+		break
 	}
+
 	var output CreateScratchResult
-	if len(result.Records) > 1 {
-		return nil, errors.New(fmt.Sprintf("More then one active org with OrgName: %s", params.Name))
-	}
-	if len(result.Records) == 0 {
-		return &CreateScratchResult{Success: false},
-			errors.New("Org Not Found after just created")
-	}
-
 	existingOrg := &result.Records[0]
 	output = CreateScratchResult{Success: true,
 		AuthCode:  existingOrg.StringField("AuthCode"),
