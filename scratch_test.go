@@ -20,6 +20,7 @@ func TestClient_CreateScratch(t *testing.T) {
 		Settings: ScratchSettings{
 			EnableAuditFieldsInactiveOwner: true,
 		},
+		Description: "Demo",
 	}) // for Cato
 	if err != nil {
 		fmt.Printf("Error: %s", err)

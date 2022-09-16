@@ -106,6 +106,7 @@ type CreateScratchParams struct {
 	Phone       string
 	CountryName string
 	Settings    ScratchSettings
+	Description string
 }
 
 type ScratchSettings struct {
@@ -126,11 +127,12 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
         ConnectedAppConsumerKey = '%s',
         ConnectedAppCallbackUrl = '%s',
         DurationDays = 30,
-        Features = '%s'
+        Features = '%s',
+        Description = '%s'
       );
       insert(newScratch);
     `
-	apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features)
+	apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description)
 	_, err := client.ExecuteAnonymous(apexBody)
 	if err != nil {
 		return nil, err
@@ -248,15 +250,18 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return &CreateScratchResult{Success: false}, err
 	}
 
-	_, err = scratchClient.MetaDeploy(buf.Bytes(), "NoTestRun")
+	res, err := scratchClient.MetaDeploy(buf.Bytes(), "NoTestRun")
 	if err != nil {
 		return &CreateScratchResult{Success: false}, err
 	}
+	if !res.Success {
+		return &CreateScratchResult{Success: false}, fmt.Errorf("err: %s, details: %s", res.ErrorMessage, res.Details)
+	}
 
+	//log.Printf("simpleforce: scratch meta update details: %+v", res.Details)
 	return &output, nil
 }
 
-// RemoveScratch creates or retrieves scratch details based on OrgName
 func (client *Client) RemoveScratch(name string) (*RemoveScratchResult, error) {
 	if !client.isLoggedIn() {
 		return nil, ErrAuthentication
@@ -1608,13 +1613,13 @@ const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
         <identityConfirmationOnTwoFactorRegistrationEnabled>true</identityConfirmationOnTwoFactorRegistrationEnabled>
         <lockSessionsToDomain>true</lockSessionsToDomain>
         <lockSessionsToIp>false</lockSessionsToIp>
+        <sessionTimeout>TwelveHours</sessionTimeout>
         <lockerServiceCSP>true</lockerServiceCSP>
         <lockerServiceNext>false</lockerServiceNext>
         <lockerServiceNextControl>false</lockerServiceNextControl>
         <redirectionWarning>true</redirectionWarning>
         <referrerPolicy>true</referrerPolicy>
         <requireHttpOnly>false</requireHttpOnly>
-        <sessionTimeout>TwoHours</sessionTimeout>
         <useLocalStorageForLogoutUrl>false</useLocalStorageForLogoutUrl>
     </sessionSettings>
     <singleSignOnSettings>

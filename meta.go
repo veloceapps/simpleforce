@@ -38,7 +38,6 @@ type MetaDeployResponse struct {
 }
 
 
-// CreateScratch creates scratch with given OrgName
 func (c *Client) MetaDeploy(zip []byte, testLevel string) (*MetaDeployResult, error) {
 	if !c.isLoggedIn() {
 		return nil, ErrAuthentication
