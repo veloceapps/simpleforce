@@ -3,8 +3,10 @@ package simpleforce
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -138,11 +140,11 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return nil, err
 	}
 
-	getOrgTries := 0
 	result := &QueryResult{}
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Minute*6)
+	defer cancel()
 	for {
 		time.Sleep(10 * time.Second)
-		getOrgTries++
 
 		// Query newly created Org
 		q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", params.Name)
@@ -155,11 +157,14 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		}
 
 		if len(result.Records) == 0 {
-			if getOrgTries > 30 {
-				return &CreateScratchResult{Success: false},
-					fmt.Errorf("Org %s not Found after just created, tried %d times", params.Name, getOrgTries)
+			log.Printf("Org %s not Found after just created", params.Name)
+			select {
+			case <-ctxTimeout.Done():
+				return nil, fmt.Errorf("Giving up checking %s after creation, not found, waited 6 minutes", params.Name)
+
+			default:
+				continue
 			}
-			continue
 		}
 		break
 	}
