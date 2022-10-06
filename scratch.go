@@ -19,7 +19,7 @@ func init() {
 
 // ExecuteAnonymousResult is returned by ExecuteAnonymous function
 type CreateScratchResult struct {
-	Namespace           string      `json:"namespace"`
+	Namespace string `json:"namespace"`
 	Features  string `json:"features"`
 	LoginURL  string `json:"loginUrl"`
 	User      string `json:"user"`
@@ -139,7 +139,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
         );
         insert(newScratch);
         `
-	apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description)
+		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
 			return nil, err
@@ -149,12 +149,13 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
         ScratchOrgInfo newScratch = new ScratchOrgInfo (
           OrgName = '%s',
           Edition = 'Developer',
+          Username = '%s',
           AdminEmail = '%s',
           ConnectedAppConsumerKey = '%s',
           ConnectedAppCallbackUrl = '%s',
           DurationDays = 30,
           Features = '%s',
-          Description = '%s'
+          Description = '%s',
 	      Namespace = '%s'
         );
         insert(newScratch);
