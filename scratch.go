@@ -19,6 +19,7 @@ func init() {
 
 // ExecuteAnonymousResult is returned by ExecuteAnonymous function
 type CreateScratchResult struct {
+	Namespace           string      `json:"namespace"`
 	Features  string `json:"features"`
 	LoginURL  string `json:"loginUrl"`
 	User      string `json:"user"`
@@ -101,6 +102,7 @@ func (client *Client) HasScratch(name string) (bool, string, error) {
 
 // CreateScratch creates scratch with given OrgName
 type CreateScratchParams struct {
+	Namespace   string
 	Name        string
 	Username    string
 	AdminEmail  string
@@ -120,26 +122,51 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return nil, ErrAuthentication
 	}
 
-	apexBodyTemplate := `
-      ScratchOrgInfo newScratch = new ScratchOrgInfo (
-        OrgName = '%s',
-        Edition = 'Developer',
-        Username = '%s',
-        AdminEmail = '%s',
-        ConnectedAppConsumerKey = '%s',
-        ConnectedAppCallbackUrl = '%s',
-        DurationDays = 30,
-        Features = '%s',
-        Description = '%s'
-      );
-      insert(newScratch);
-    `
+	var apexBodyTemplate string
+	var apexBody string
+	if params.Namespace == "" {
+		apexBodyTemplate = `
+        ScratchOrgInfo newScratch = new ScratchOrgInfo (
+          OrgName = '%s',
+          Edition = 'Developer',
+          Username = '%s',
+          AdminEmail = '%s',
+          ConnectedAppConsumerKey = '%s',
+          ConnectedAppCallbackUrl = '%s',
+          DurationDays = 30,
+          Features = '%s',
+          Description = '%s'
+        );
+        insert(newScratch);
+        `
 	apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description)
-	_, err := client.ExecuteAnonymous(apexBody)
-	if err != nil {
-		return nil, err
+		_, err := client.ExecuteAnonymous(apexBody)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		apexBodyTemplate = `
+        ScratchOrgInfo newScratch = new ScratchOrgInfo (
+          OrgName = '%s',
+          Edition = 'Developer',
+          AdminEmail = '%s',
+          ConnectedAppConsumerKey = '%s',
+          ConnectedAppCallbackUrl = '%s',
+          DurationDays = 30,
+          Features = '%s',
+          Description = '%s'
+	      Namespace = '%s'
+        );
+        insert(newScratch);
+        `
+		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description, params.Namespace)
+		_, err := client.ExecuteAnonymous(apexBody)
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	var err error
 	result := &QueryResult{}
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Minute*6)
 	defer cancel()
@@ -172,6 +199,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	var output CreateScratchResult
 	existingOrg := &result.Records[0]
 	output = CreateScratchResult{Success: true,
+		Namespace: existingOrg.StringField("Namespace"),
 		AuthCode:  existingOrg.StringField("AuthCode"),
 		ExpiresAt: existingOrg.StringField("ExpirationDate"),
 		User:      existingOrg.StringField("SignupUsername"),
