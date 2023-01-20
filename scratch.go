@@ -245,6 +245,20 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return &CreateScratchResult{Success: false}, err
 	}
 
+	err = ApplySecuritySettings(scratchClient, ApplySecuritySettingsParams{
+		EnableAuditFieldsInactiveOwner: params.Settings.EnableAuditFieldsInactiveOwner,
+	})
+	if err != nil {
+		return &CreateScratchResult{Success: false}, err
+	}
+	return &output, nil
+}
+
+type ApplySecuritySettingsParams struct {
+	EnableAuditFieldsInactiveOwner bool
+}
+
+func ApplySecuritySettings(client *Client, params ApplySecuritySettingsParams) error {
 	// APPLY Security settings to allow authorizing without 2FA
 	/* zip layout:
 	package.xml
@@ -256,7 +270,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	zipWriter := zip.NewWriter(buf)
 	ScratchSecuritySettingsMeta := fmt.Sprintf(
 		ScratchSecuritySettingsMetaTpl,
-		strconv.FormatBool(params.Settings.EnableAuditFieldsInactiveOwner),
+		strconv.FormatBool(params.EnableAuditFieldsInactiveOwner),
 	)
 
 	// Add some files to the archive.
@@ -270,30 +284,53 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	for _, file := range files {
 		zipFile, err := zipWriter.Create(file.Name)
 		if err != nil {
-			return &CreateScratchResult{Success: false}, err
+			return err
 		}
 		_, err = zipFile.Write([]byte(file.Body))
 		if err != nil {
-			return &CreateScratchResult{Success: false}, err
+			return err
 		}
 	}
 
 	// Make sure to check the error on Close.
-	err = zipWriter.Close()
+	err := zipWriter.Close()
 	if err != nil {
-		return &CreateScratchResult{Success: false}, err
+		return err
 	}
 
-	res, err := scratchClient.MetaDeploy(buf.Bytes(), "NoTestRun")
+	res, err := client.MetaDeploy(buf.Bytes(), "NoTestRun")
 	if err != nil {
-		return &CreateScratchResult{Success: false}, err
+		return err
 	}
 	if !res.Success {
-		return &CreateScratchResult{Success: false}, fmt.Errorf("err: %s, details: %s", res.ErrorMessage, res.Details)
+		return fmt.Errorf("err: %s, details: %s", res.ErrorMessage, res.Details)
+	}
+	problems := []string{}
+	detailsMap, ok := res.Details.(map[string]interface{})
+	if ok {
+		compMessages, ok := detailsMap["allComponentMessages"]
+		if ok {
+			compMessagesList, ok := compMessages.([]interface{})
+			if ok {
+				for _, comp := range compMessagesList {
+					compMap, ok := comp.(map[string]interface{})
+					if ok {
+						problem, ok := compMap["problem"]
+						if ok {
+							if problem != nil {
+								problems = append(problems, problem.(string))
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
-	//log.Printf("simpleforce: scratch meta update details: %+v", res.Details)
-	return &output, nil
+	if len(problems) > 0 {
+		return fmt.Errorf("got errors, applying security settings: %s", strings.Join(problems, ", "))
+	}
+	return nil
 }
 
 func (client *Client) RemoveScratch(name string) (*RemoveScratchResult, error) {
@@ -1606,7 +1643,7 @@ const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
     </networkAccess>
     <passwordPolicies>
         <complexity>AlphaNumeric</complexity>
-        <expiration>NinetyDays</expiration>
+        <expiration>Never</expiration>
         <historyRestriction>3</historyRestriction>
         <lockoutInterval>FifteenMinutes</lockoutInterval>
         <maxLoginAttempts>TenAttempts</maxLoginAttempts>
