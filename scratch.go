@@ -245,7 +245,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		return &CreateScratchResult{Success: false}, err
 	}
 
-	err = ApplySecuritySettings(scratchClient, ApplySecuritySettingsParams{
+	err = scratchClient.ApplySecuritySettings(ApplySecuritySettingsParams{
 		EnableAuditFieldsInactiveOwner: params.Settings.EnableAuditFieldsInactiveOwner,
 	})
 	if err != nil {
@@ -258,7 +258,7 @@ type ApplySecuritySettingsParams struct {
 	EnableAuditFieldsInactiveOwner bool
 }
 
-func ApplySecuritySettings(client *Client, params ApplySecuritySettingsParams) error {
+func (client *Client) ApplySecuritySettings(params ApplySecuritySettingsParams) error {
 	// APPLY Security settings to allow authorizing without 2FA
 	/* zip layout:
 	package.xml
