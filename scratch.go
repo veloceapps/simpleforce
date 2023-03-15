@@ -109,6 +109,7 @@ type CreateScratchParams struct {
 	Features    string
 	Phone       string
 	CountryName string
+	CountryCode string
 	Settings    ScratchSettings
 	Description string
 }
@@ -135,11 +136,13 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
           ConnectedAppCallbackUrl = '%s',
           DurationDays = 30,
           Features = '%s',
-          Description = '%s'
+          Description = '%s',
+          Language = 'en_US',
+          Country = '%s'
         );
         insert(newScratch);
         `
-		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description)
+		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description, params.CountryCode)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
 			return nil, err
@@ -156,11 +159,13 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
           DurationDays = 30,
           Features = '%s',
           Description = '%s',
-	      Namespace = '%s'
+          Namespace = '%s',
+          Language = 'en_US',
+          Country = '%s'
         );
         insert(newScratch);
         `
-		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description, params.Namespace)
+		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description, params.Namespace, params.CountryCode)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
 			return nil, err
@@ -236,7 +241,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 
       user.Country = countryName;
       user.MobilePhone = phoneNumber;
-
+      user.LanguageLocaleKey = 'en_US';
       update user;
     `
 	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)

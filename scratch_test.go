@@ -32,7 +32,7 @@ func TestClient_CreateScratch(t *testing.T) {
 	fmt.Printf("Result: %+v\n", result)
 }
 
-func TestClient_CreateScratch_WithNamespace(t *testing.T) {
+func TestClient_CreateNamespaceScratch(t *testing.T) {
 	client := requireClient(t, true)
 	// 	result, err := client.CreateOrRetrieveScratch("vk20 Scratch", "salesforce-environments@secret.com", "MultiCurrency;StateAndCountryPicklist", "+371 12345678", "Latvia") // for GP orgs
 	dateSuffix := time.Now().UTC().Format("0201-150405")
@@ -44,6 +44,7 @@ func TestClient_CreateScratch_WithNamespace(t *testing.T) {
 		Features:    "",
 		Phone:       "+371 12345678",
 		CountryName: "Latvia",
+		CountryCode: "LV",
 		Settings: ScratchSettings{
 			EnableAuditFieldsInactiveOwner: true,
 		},
@@ -54,6 +55,7 @@ func TestClient_CreateScratch_WithNamespace(t *testing.T) {
 		t.FailNow()
 	}
 	if !result.Success {
+		fmt.Printf("Result: %+v\n", result)
 		t.FailNow()
 	}
 	fmt.Printf("Result: %+v\n", result)
