@@ -168,7 +168,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description, params.Namespace, params.CountryCode)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error creating scratch org: %s", err)
 		}
 	}
 
@@ -220,6 +220,13 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 			errors.New(fmt.Sprintf("AuthCode auth failed just after org creation: %s", err))
 	}
 
+	err = scratchClient.ApplySecuritySettings(ApplySecuritySettingsParams{
+		EnableAuditFieldsInactiveOwner: params.Settings.EnableAuditFieldsInactiveOwner,
+	})
+	if err != nil {
+		return &output, fmt.Errorf(`Error applying security settings: %s`, err)
+	}
+
 	// Set Scratch Password to be Random strong pass
 	pass := generatePassword(16, 2, 2, 2)
 	apexBodyTemplate = `
@@ -247,15 +254,9 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)
 	_, err = scratchClient.ExecuteAnonymous(apexBody)
 	if err != nil {
-		return &CreateScratchResult{Success: false}, err
+		return &output, fmt.Errorf("Error setting user details: %s", err)
 	}
 
-	err = scratchClient.ApplySecuritySettings(ApplySecuritySettingsParams{
-		EnableAuditFieldsInactiveOwner: params.Settings.EnableAuditFieldsInactiveOwner,
-	})
-	if err != nil {
-		return &CreateScratchResult{Success: false}, err
-	}
 	return &output, nil
 }
 

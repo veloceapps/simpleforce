@@ -14,9 +14,10 @@ func TestClient_CreateScratch(t *testing.T) {
 		Name:        "vk20 Scratch",
 		Username:    "cato-full@velocpq.com." + dateSuffix,
 		AdminEmail:  "salesforce-environments@xxxxxxxx.com",
-		Features:    "",
-		Phone:       "+371 12345678",
-		CountryName: "Latvia",
+		Features:    "MultiCurrency;StateAndCountryPicklist",
+		Phone:       "+1 12345678",
+		CountryName: "United States",
+		CountryCode: "US",
 		Settings: ScratchSettings{
 			EnableAuditFieldsInactiveOwner: true,
 		},
@@ -24,9 +25,11 @@ func TestClient_CreateScratch(t *testing.T) {
 	}) // for Cato
 	if err != nil {
 		fmt.Printf("Error: %s", err)
+		fmt.Printf("Result: %+v\n", result)
 		t.FailNow()
 	}
 	if !result.Success {
+		fmt.Printf("Result: %+v\n", result)
 		t.FailNow()
 	}
 	fmt.Printf("Result: %+v\n", result)
@@ -40,11 +43,11 @@ func TestClient_CreateNamespaceScratch(t *testing.T) {
 		Namespace:   "VELOCPQ",
 		Name:        "vk20 Scratch",
 		Username:    "cato-full@velocpq.com." + dateSuffix,
-		AdminEmail:  "salesforce-environments@xxxxxxxx.com",
+		AdminEmail:  "salesforce-environments@veloce.com",
 		Features:    "",
 		Phone:       "+371 12345678",
-		CountryName: "Latvia",
-		CountryCode: "LV",
+		CountryName: "United States",
+		CountryCode: "US",
 		Settings: ScratchSettings{
 			EnableAuditFieldsInactiveOwner: true,
 		},
