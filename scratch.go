@@ -100,6 +100,19 @@ func (client *Client) HasScratch(name string) (bool, string, error) {
 	return false, "", nil
 }
 
+func (client *Client) Scratches() (scratches []SObject, err error) {
+	if !client.isLoggedIn() {
+		return scratches, ErrAuthentication
+	}
+
+	q := "SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE Status = 'Active' LIMIT 40"
+	result, err := client.Query(q)
+	if err != nil {
+		return scratches, fmt.Errorf("error to query scratches in salesforce devhub: %s", err)
+	}
+	return result.Records, nil
+}
+
 // CreateScratch creates scratch with given OrgName
 type CreateScratchParams struct {
 	Namespace   string

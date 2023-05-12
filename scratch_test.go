@@ -87,3 +87,13 @@ func TestClient_DropScratch(t *testing.T) {
 	}
 	fmt.Printf("Result: %+v", result)
 }
+
+func TestScratchesList(t *testing.T) {
+	client := requireClient(t, true)
+	result, err := client.Scratches()
+	if err != nil {
+		fmt.Printf("Error: %s", err)
+		t.FailNow()
+	}
+	fmt.Printf("Result: %+v", result)
+}
