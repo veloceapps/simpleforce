@@ -267,7 +267,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)
 	_, err = scratchClient.ExecuteAnonymous(apexBody)
 	if err != nil {
-		return &output, fmt.Errorf("Error setting user details: %s", err)
+		log.Printf("Error setting user details: %s", err)
 	}
 
 	return &output, nil
