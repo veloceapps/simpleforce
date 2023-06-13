@@ -14,7 +14,7 @@ func TestClient_CreateScratch(t *testing.T) {
 		Name:        "vk20 Scratch",
 		Username:    "cato-full@velocpq.com." + dateSuffix,
 		AdminEmail:  "salesforce-environments@xxxxxxxx.com",
-		Features:    "MultiCurrency;StateAndCountryPicklist",
+		Features:    "StateAndCountryPicklist",
 		Phone:       "+1 12345678",
 		CountryName: "United States",
 		CountryCode: "US",

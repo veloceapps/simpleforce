@@ -267,7 +267,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)
 	_, err = scratchClient.ExecuteAnonymous(apexBody)
 	if err != nil {
-		log.Printf("Error setting user details: %s", err)
+		return &output, fmt.Errorf("Error setting user details: %s", err)
 	}
 
 	return &output, nil
@@ -299,6 +299,7 @@ func (client *Client) ApplySecuritySettings(params ApplySecuritySettingsParams) 
 		{"package.xml", ScratchPackageXML},
 		{"settings/Quote.settings", ScratchQuoteSettingsMeta},
 		{"settings/Security.settings", ScratchSecuritySettingsMeta},
+		{"settings/Currency.settings", ScratchCurrencySettingsMeta},
 	}
 	for _, file := range files {
 		zipFile, err := zipWriter.Create(file.Name)
@@ -375,6 +376,14 @@ const ScratchQuoteSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <QuoteSettings xmlns="http://soap.sforce.com/2006/04/metadata">
     <enableQuote>true</enableQuote>
 </QuoteSettings>`
+
+const ScratchCurrencySettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
+<CurrencySettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <enableCurrencyEffectiveDates>false</enableCurrencyEffectiveDates>
+    <enableCurrencySymbolWithMultiCurrency>false</enableCurrencySymbolWithMultiCurrency>
+    <enableMultiCurrency>true</enableMultiCurrency>
+    <isParenCurrencyConvDisabled>true</isParenCurrencyConvDisabled>
+</CurrencySettings>`
 
 const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
 <SecuritySettings xmlns="http://soap.sforce.com/2006/04/metadata">
