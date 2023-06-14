@@ -257,11 +257,13 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
       String phoneNumber = '%s';
       String countryName = '%s';
       String userId = UserInfo.getUserId();
-      User user = [SELECT Id, Name,MobilePhone FROM User WHERE Id =: userId LIMIT 1];
+      User user = [SELECT Id, Name,MobilePhone,DefaultCurrencyIsoCode,CurrencyIsoCode FROM User WHERE Id =: userId LIMIT 1];
 
       user.Country = countryName;
       user.MobilePhone = phoneNumber;
       user.LanguageLocaleKey = 'en_US';
+      user.DefaultCurrencyIsoCode = 'USD';
+      user.CurrencyIsoCode = 'USD';
       update user;
     `
 	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)
@@ -372,6 +374,23 @@ func (client *Client) RemoveScratch(name string) (*RemoveScratchResult, error) {
 	return &RemoveScratchResult{Success: true}, nil
 }
 
+const ScratchPackageXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Security</members>
+        <name>Settings</name>
+    </types>
+    <types>
+        <members>Quote</members>
+        <name>Settings</name>
+    </types>
+    <types>
+        <members>Currency</members>
+        <name>Settings</name>
+    </types>
+    <version>53.0</version>
+</Package>`
+
 const ScratchQuoteSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <QuoteSettings xmlns="http://soap.sforce.com/2006/04/metadata">
     <enableQuote>true</enableQuote>
@@ -379,10 +398,7 @@ const ScratchQuoteSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 
 const ScratchCurrencySettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <CurrencySettings xmlns="http://soap.sforce.com/2006/04/metadata">
-    <enableCurrencyEffectiveDates>false</enableCurrencyEffectiveDates>
-    <enableCurrencySymbolWithMultiCurrency>false</enableCurrencySymbolWithMultiCurrency>
     <enableMultiCurrency>true</enableMultiCurrency>
-    <isParenCurrencyConvDisabled>true</isParenCurrencyConvDisabled>
 </CurrencySettings>`
 
 const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1729,16 +1745,3 @@ const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
         <isLoginWithSalesforceCredentialsDisabled>false</isLoginWithSalesforceCredentialsDisabled>
     </singleSignOnSettings>
 </SecuritySettings>`
-
-const ScratchPackageXML = `<?xml version="1.0" encoding="UTF-8"?>
-<Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <types>
-        <members>Security</members>
-        <name>Settings</name>
-    </types>
-    <types>
-        <members>Quote</members>
-        <name>Settings</name>
-    </types>
-    <version>53.0</version>
-</Package>`

@@ -10,10 +10,11 @@ func TestClient_CreateScratch(t *testing.T) {
 	client := requireClient(t, true)
 	// 	result, err := client.CreateOrRetrieveScratch("vk20 Scratch", "salesforce-environments@secret.com", "MultiCurrency;StateAndCountryPicklist", "+371 12345678", "Latvia") // for GP orgs
 	dateSuffix := time.Now().UTC().Format("0201-150405")
+	userName := "cato-full@velocpq.com." + dateSuffix
 	result, err := client.CreateScratch(CreateScratchParams{
 		Name:        "vk20 Scratch",
-		Username:    "cato-full@velocpq.com." + dateSuffix,
-		AdminEmail:  "salesforce-environments@xxxxxxxx.com",
+		Username:    userName,
+		AdminEmail:  userName,
 		Features:    "StateAndCountryPicklist",
 		Phone:       "+1 12345678",
 		CountryName: "United States",
