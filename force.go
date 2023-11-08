@@ -167,7 +167,7 @@ func (client *Client) LoginWithAuthCode(loginURL string, code string) error {
 	}
 	log.Println(res.Status)
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (client *Client) LoginWithAuthCode(loginURL string, code string) error {
 	var response BearerTokenResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return fmt.Errorf("error unmarshalling response: %s", err)
+		return fmt.Errorf("error unmarshalling response '%s': %s", body, err)
 	}
 	if response.AccessToken == "" {
 		return errors.New("Authentication failed")
