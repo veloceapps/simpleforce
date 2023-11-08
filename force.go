@@ -57,7 +57,7 @@ func (client *Client) GetSid() (sid string) {
 	return client.sessionID
 }
 
-//Expose Loc to save in admin settings
+// Expose Loc to save in admin settings
 func (client *Client) GetLoc() (loc string) {
 	return client.instanceURL
 }
@@ -175,7 +175,7 @@ func (client *Client) LoginWithAuthCode(loginURL string, code string) error {
 	var response BearerTokenResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return err
+		return fmt.Errorf("error unmarshalling response: %s", err)
 	}
 	if response.AccessToken == "" {
 		return errors.New("Authentication failed")
@@ -368,7 +368,7 @@ func parseHost(input string) string {
 	return "Failed to parse URL input"
 }
 
-//Get the List of all available objects and their metadata for your organization's data
+// Get the List of all available objects and their metadata for your organization's data
 func (client *Client) DescribeGlobal() (*SObjectMeta, error) {
 	apiPath := fmt.Sprintf("/services/data/v%s/sobjects", client.apiVersion)
 	baseURL := strings.TrimRight(client.baseURL, "/")
