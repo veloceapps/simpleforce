@@ -1728,7 +1728,7 @@ const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
         <identityConfirmationOnTwoFactorRegistrationEnabled>true</identityConfirmationOnTwoFactorRegistrationEnabled>
         <lockSessionsToDomain>true</lockSessionsToDomain>
         <lockSessionsToIp>false</lockSessionsToIp>
-        <sessionTimeout>TwelveHours</sessionTimeout>
+        <sessionTimeout>TwentyFourHours</sessionTimeout>
         <lockerServiceCSP>true</lockerServiceCSP>
         <lockerServiceNext>false</lockerServiceNext>
         <lockerServiceNextControl>false</lockerServiceNextControl>
