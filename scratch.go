@@ -193,26 +193,49 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		time.Sleep(10 * time.Second)
 
 		// Query newly created Org
-		q := fmt.Sprintf("SELECT FIELDS(ALL) FROM ScratchOrgInfo WHERE OrgName = '%s' AND Status = 'Active' LIMIT 2", params.Name)
+		q := fmt.Sprintf(
+			"SELECT FIELDS(ALL) FROM ScratchOrgInfo "+
+				"WHERE OrgName = '%s' AND Username = '%s' AND Status != 'Deleted' LIMIT 2",
+			params.Name, params.Username,
+		)
 		result, err = client.Query(q)
 		if err != nil {
 			return nil, err
 		}
 		if len(result.Records) > 1 {
-			return nil, fmt.Errorf("More then one active org with OrgName: %s", params.Name)
+			return nil, fmt.Errorf("More then one  org with OrgName: %s and user: %s", params.Name, params.Username)
+		}
+
+		if len(result.Records) == 1 {
+			qResult := result.Records[0]
+			status := qResult.StringField("Status")
+			if status == "Active" {
+				log.Printf("Org %s is active, all is ok", params.Name)
+				break
+			}
+
+			if status == "Error" {
+				errorCode := qResult.StringField("ErrorCode")
+				return nil, fmt.Errorf("Error status when creating org %s: %s, "+
+					"errors explanations: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_error_codes.htm",
+					params.Name, errorCode,
+				)
+			}
+			log.Printf("Got status %s for org %s when creating with user %s, waiting...", status, params.Name, params.Username)
 		}
 
 		if len(result.Records) == 0 {
 			log.Printf("Org %s not Found after just created", params.Name)
-			select {
-			case <-ctxTimeout.Done():
-				return nil, fmt.Errorf("Giving up checking %s after creation, not found, waited 6 minutes", params.Name)
-
-			default:
-				continue
-			}
 		}
-		break
+
+		select {
+		case <-ctxTimeout.Done():
+
+			return nil, fmt.Errorf("Giving up checking %s after creation, not found, waited 6 minutes", params.Name)
+
+		default:
+			continue
+		}
 	}
 
 	var output CreateScratchResult
