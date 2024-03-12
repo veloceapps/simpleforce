@@ -115,16 +115,17 @@ func (client *Client) Scratches() (scratches []SObject, err error) {
 
 // CreateScratch creates scratch with given OrgName
 type CreateScratchParams struct {
-	Namespace   string
-	Name        string
-	Username    string
-	AdminEmail  string
-	Features    string
-	Phone       string
-	CountryName string
-	CountryCode string
-	Settings    ScratchSettings
-	Description string
+	Namespace     string
+	Name          string
+	Username      string
+	AdminEmail    string
+	Features      string
+	Phone         string
+	CountryName   string
+	CountryCode   string
+	Settings      ScratchSettings
+	Description   string
+	DurationsDays int
 }
 
 type ScratchSettings struct {
@@ -134,6 +135,10 @@ type ScratchSettings struct {
 func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchResult, error) {
 	if !client.isLoggedIn() {
 		return nil, ErrAuthentication
+	}
+	durationDays := 30
+	if params.DurationsDays > 0 {
+		durationDays = params.DurationsDays
 	}
 
 	var apexBodyTemplate string
@@ -147,7 +152,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
           AdminEmail = '%s',
           ConnectedAppConsumerKey = '%s',
           ConnectedAppCallbackUrl = '%s',
-          DurationDays = 30,
+          DurationDays = %d,
           Features = '%s',
           Description = '%s',
           Language = 'en_US',
@@ -155,7 +160,7 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
         );
         insert(newScratch);
         `
-		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, params.Features, params.Description, params.CountryCode)
+		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, durationDays, params.Features, params.Description, params.CountryCode)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
 			return nil, err
