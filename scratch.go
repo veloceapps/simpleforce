@@ -126,6 +126,7 @@ type CreateScratchParams struct {
 	Settings      ScratchSettings
 	Description   string
 	DurationsDays int
+	Edition       string
 }
 
 type ScratchSettings struct {
@@ -141,13 +142,18 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 		durationDays = params.DurationsDays
 	}
 
+	edition := "Developer"
+	if params.Edition != "" {
+		edition = params.Edition
+	}
+
 	var apexBodyTemplate string
 	var apexBody string
 	if params.Namespace == "" {
 		apexBodyTemplate = `
         ScratchOrgInfo newScratch = new ScratchOrgInfo (
           OrgName = '%s',
-          Edition = 'Developer',
+          Edition = '%s',
           Username = '%s',
           AdminEmail = '%s',
           ConnectedAppConsumerKey = '%s',
@@ -160,7 +166,8 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
         );
         insert(newScratch);
         `
-		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, params.Username, params.AdminEmail, DefaultClientID, DefaultRedirectURI, durationDays, params.Features, params.Description, params.CountryCode)
+		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, edition, params.Username, params.AdminEmail, DefaultClientID,
+			DefaultRedirectURI, durationDays, params.Features, params.Description, params.CountryCode)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
 			return nil, err

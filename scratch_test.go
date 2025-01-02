@@ -15,7 +15,7 @@ func TestClient_CreateScratch(t *testing.T) {
 		Name:        "vk20 Scratch",
 		Username:    userName,
 		AdminEmail:  userName,
-		Features:    "StateAndCountryPicklist",
+		Features:    "CoreCpq;EnableSetPasswordInApi;Communities;CustomerCommunityPlus;ProductCatalogManagementPCAddOn;EnableSetPasswordInApi;OrderSaveLogicEnabled;OrderSaveBehaviorBoth",
 		Phone:       "+1 12345678",
 		CountryName: "United States",
 		CountryCode: "US",
@@ -23,6 +23,7 @@ func TestClient_CreateScratch(t *testing.T) {
 			EnableAuditFieldsInactiveOwner: true,
 		},
 		Description: "DEMO",
+		Edition:     "Enterprise",
 	}) // for Cato
 	if err != nil {
 		fmt.Printf("Error: %s", err)
