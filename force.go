@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	DefaultAPIVersion  = "54.0"
+	DefaultAPIVersion  = "62.0"
 	DefaultClientID    = "PlatformCLI"                         // to match SFDX
 	DefaultRedirectURI = `http://localhost:1717/OauthRedirect` // to match SFDX
 	DefaultURL         = "https://login.salesforce.com"

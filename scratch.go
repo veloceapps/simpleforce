@@ -127,6 +127,7 @@ type CreateScratchParams struct {
 	Description   string
 	DurationsDays int
 	Edition       string
+	Release       string
 }
 
 type ScratchSettings struct {
@@ -162,12 +163,13 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
           Features = '%s',
           Description = '%s',
           Language = 'en_US',
-          Country = '%s'
+          Country = '%s',
+          Release = '%s'
         );
         insert(newScratch);
         `
 		apexBody := fmt.Sprintf(apexBodyTemplate, params.Name, edition, params.Username, params.AdminEmail, DefaultClientID,
-			DefaultRedirectURI, durationDays, params.Features, params.Description, params.CountryCode)
+			DefaultRedirectURI, durationDays, params.Features, params.Description, params.CountryCode, params.Release)
 		_, err := client.ExecuteAnonymous(apexBody)
 		if err != nil {
 			return nil, err
