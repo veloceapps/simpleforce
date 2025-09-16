@@ -291,19 +291,17 @@ func (client *Client) CreateScratch(params CreateScratchParams) (*CreateScratchR
 
 	// Set Phone number in scratch to avoid prompts on UI
 	apexBodyTemplate = `
-      String phoneNumber = '%s';
       String countryName = '%s';
       String userId = UserInfo.getUserId();
       User user = [SELECT Id, Name,MobilePhone,DefaultCurrencyIsoCode,CurrencyIsoCode FROM User WHERE Id =: userId LIMIT 1];
 
       user.Country = countryName;
-      user.MobilePhone = phoneNumber;
       user.LanguageLocaleKey = 'en_US';
       user.DefaultCurrencyIsoCode = 'USD';
       user.CurrencyIsoCode = 'USD';
       update user;
     `
-	apexBody = fmt.Sprintf(apexBodyTemplate, params.Phone, params.CountryName)
+	apexBody = fmt.Sprintf(apexBodyTemplate, params.CountryName)
 	_, err = scratchClient.ExecuteAnonymous(apexBody)
 	if err != nil {
 		return &output, fmt.Errorf("Error setting user details: %s", err)
