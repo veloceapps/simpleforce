@@ -337,6 +337,7 @@ func (client *Client) ApplySecuritySettings(params ApplySecuritySettingsParams) 
 		{"settings/Quote.settings", ScratchQuoteSettingsMeta},
 		{"settings/Security.settings", ScratchSecuritySettingsMeta},
 		{"settings/Currency.settings", ScratchCurrencySettingsMeta},
+		{"settings/Deployment.settings", DeploymentSettingsMeta},
 	}
 	for _, file := range files {
 		zipFile, err := zipWriter.Create(file.Name)
@@ -423,6 +424,10 @@ const ScratchPackageXML = `<?xml version="1.0" encoding="UTF-8"?>
         <members>Currency</members>
         <name>Settings</name>
     </types>
+    <types>
+    	<members>Deployment</members>
+     	<name>Settings</name>
+    </types>
     <version>53.0</version>
 </Package>`
 
@@ -435,6 +440,11 @@ const ScratchCurrencySettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <CurrencySettings xmlns="http://soap.sforce.com/2006/04/metadata">
     <enableMultiCurrency>true</enableMultiCurrency>
 </CurrencySettings>`
+
+const DeploymentSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
+<DeploymentSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+   <doesSkipAsyncApexValidation>true</doesSkipAsyncApexValidation>
+</DeploymentSettings>`
 
 const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
 <SecuritySettings xmlns="http://soap.sforce.com/2006/04/metadata">

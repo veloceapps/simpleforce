@@ -23,8 +23,8 @@ func TestClient_CreateScratch(t *testing.T) {
 			EnableAuditFieldsInactiveOwner: true,
 		},
 		Description: "DEMO",
-		Edition:     "Developer",
-		Release:     "Preview",
+		Edition:     "",
+		Release:     "",
 	}) // for Cato
 	if err != nil {
 		fmt.Printf("Error: %s", err)
