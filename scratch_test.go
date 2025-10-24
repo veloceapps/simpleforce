@@ -21,6 +21,9 @@ func TestClient_CreateScratch(t *testing.T) {
 		CountryCode: "US",
 		Settings: ScratchSettings{
 			EnableAuditFieldsInactiveOwner: true,
+			IPRanges: []IPRange{
+				{Description: "office", Start: "1.1.1.1", End: "1.1.1.1"},
+			},
 		},
 		Description: "DEMO",
 		Edition:     "",
