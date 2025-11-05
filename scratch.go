@@ -363,6 +363,7 @@ func (client *Client) ApplySecuritySettings(params ApplySecuritySettingsParams) 
 		{"settings/Security.settings", ScratchSecuritySettingsMeta},
 		{"settings/Currency.settings", ScratchCurrencySettingsMeta},
 		{"settings/Deployment.settings", DeploymentSettingsMeta},
+		{"settings/EinsteinGpt.settings", EnsteinGptSettingsMeta},
 	}
 	for _, file := range files {
 		zipFile, err := zipWriter.Create(file.Name)
@@ -453,7 +454,11 @@ const ScratchPackageXML = `<?xml version="1.0" encoding="UTF-8"?>
     	<members>Deployment</members>
      	<name>Settings</name>
     </types>
-    <version>53.0</version>
+    <types>
+    	<members>EinsteinGpt</members>
+     	<name>Settings</name>
+    </types>
+    <version>63.0</version>
 </Package>`
 
 const ScratchQuoteSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
@@ -470,6 +475,11 @@ const DeploymentSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <DeploymentSettings xmlns="http://soap.sforce.com/2006/04/metadata">
    <doesSkipAsyncApexValidation>true</doesSkipAsyncApexValidation>
 </DeploymentSettings>`
+
+const EnsteinGptSettingsMeta = `<?xml version="1.0" encoding="UTF-8"?>
+<EinsteinGptSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <enableEinsteinGptPlatform>true</enableEinsteinGptPlatform>
+</EinsteinGptSettings>`
 
 const ScratchSecuritySettingsMetaTpl = `<?xml version="1.0" encoding="UTF-8"?>
 <SecuritySettings xmlns="http://soap.sforce.com/2006/04/metadata">
