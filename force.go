@@ -2,6 +2,7 @@ package simpleforce
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -14,7 +15,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 )
 
@@ -271,6 +274,123 @@ func (client *Client) LoginPassword(username, password, token string) error {
 	client.user.fullName = loginResponse.UserFullName
 
 	log.Println(logPrefix, "User", client.user.name, "authenticated.")
+	return nil
+}
+
+// salesforceJWTClaims represents the custom claims for Salesforce JWT authentication
+type salesforceJWTClaims struct {
+	Issuer    string `json:"iss"`
+	Subject   string `json:"sub"`
+	Audience  string `json:"aud"` // Must be a string, not an array
+	ExpiresAt int64  `json:"exp"`
+}
+
+func (c salesforceJWTClaims) GetExpirationTime() (*jwt.NumericDate, error) {
+	return jwt.NewNumericDate(time.Unix(c.ExpiresAt, 0)), nil
+}
+
+func (c salesforceJWTClaims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (c salesforceJWTClaims) GetNotBefore() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (c salesforceJWTClaims) GetIssuer() (string, error) {
+	return c.Issuer, nil
+}
+
+func (c salesforceJWTClaims) GetSubject() (string, error) {
+	return c.Subject, nil
+}
+
+func (c salesforceJWTClaims) GetAudience() (jwt.ClaimStrings, error) {
+	return jwt.ClaimStrings{c.Audience}, nil
+}
+
+// LoginJWT signs into Salesforce using JWT bearer token flow.
+// This is similar to 'sf org login jwt' in the Salesforce CLI.
+// Parameters:
+//   - clientID: The OAuth consumer key from the connected app
+//   - username: The Salesforce username (e.g., user@example.com)
+//   - privateKey: The RSA private key used to sign the JWT
+//   - loginURL: The Salesforce login URL (e.g., "https://login.salesforce.com" or "https://test.salesforce.com")
+//
+// Ref: https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_jwt_flow.htm
+func (client *Client) LoginJWT(clientID, username string, privateKey *rsa.PrivateKey, loginURL string) error {
+	// Normalize the loginURL to ensure it's just the base URL without trailing slashes
+	normalizedURL := strings.TrimRight(loginURL, "/")
+
+	// Create JWT claims
+	// The audience must be a string (not an array) with the authorization server URL
+	now := time.Now()
+	claims := salesforceJWTClaims{
+		Issuer:    clientID,
+		Subject:   username,
+		Audience:  normalizedURL,
+		ExpiresAt: now.Add(5 * time.Minute).Unix(),
+	}
+
+	// Create and sign the JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	assertion, err := token.SignedString(privateKey)
+	if err != nil {
+		log.Println(logPrefix, "error signing JWT token:", err)
+		return errors.Wrap(err, "failed to sign JWT token")
+	}
+
+	// Exchange JWT for access token
+	endpoint := fmt.Sprintf("%s/services/oauth2/token", normalizedURL)
+	data := url.Values{}
+	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+	data.Set("assertion", assertion)
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, strings.NewReader(data.Encode()))
+	if err != nil {
+		log.Println(logPrefix, "error creating JWT token request:", err)
+		return errors.Wrap(err, "failed to create token request")
+	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	resp, err := client.httpClient.Do(req)
+	if err != nil {
+		log.Println(logPrefix, "error submitting JWT token request:", err)
+		return errors.Wrap(err, "failed to submit token request")
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(logPrefix, "error reading token response:", err)
+		return errors.Wrap(err, "failed to read token response")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println(logPrefix, "JWT authentication failed, status:", resp.StatusCode)
+		log.Println(logPrefix, "Response body:", string(body))
+		return fmt.Errorf("JWT authentication failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse the response
+	var tokenResponse BearerTokenResponse
+	err = json.Unmarshal(body, &tokenResponse)
+	if err != nil {
+		log.Println(logPrefix, "error unmarshalling token response:", err)
+		return errors.Wrap(err, "failed to parse token response")
+	}
+
+	if tokenResponse.AccessToken == "" {
+		return errors.New("JWT authentication failed: no access token in response")
+	}
+
+	// Set the session credentials
+	client.sessionID = tokenResponse.AccessToken
+	client.instanceURL = parseHost(tokenResponse.InstanceURL)
+
+	log.Println(logPrefix, "User", username, "authenticated via JWT.")
 	return nil
 }
 
