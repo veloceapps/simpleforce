@@ -3,7 +3,9 @@ package simpleforce
 import (
 	"bytes"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"encoding/xml"
 	"fmt"
 	"html"
@@ -392,6 +394,42 @@ func (client *Client) LoginJWT(clientID, username string, privateKey *rsa.Privat
 
 	log.Println(logPrefix, "User", username, "authenticated via JWT.")
 	return nil
+}
+
+// loadPrivateKey loads and parses an RSA private key from the path
+func LoadPrivateKey(keyPath string) (*rsa.PrivateKey, error) {
+
+	if keyPath == "" {
+		return nil, fmt.Errorf("path is not set")
+	}
+
+	keyData, err := os.ReadFile(keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read private key file %s: %v", keyPath, err)
+	}
+
+	// Decode PEM block
+	block, _ := pem.Decode(keyData)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block from private key file")
+	}
+
+	// Parse the private key - try PKCS1 first, then PKCS8
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		// Try PKCS8 format
+		key, err2 := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err2 != nil {
+			return nil, fmt.Errorf("failed to parse private key as PKCS1 or PKCS8: PKCS1 error=%v, PKCS8 error=%v", err, err2)
+		}
+		var ok bool
+		privateKey, ok = key.(*rsa.PrivateKey)
+		if !ok {
+			return nil, fmt.Errorf("private key is not an RSA key")
+		}
+	}
+
+	return privateKey, nil
 }
 
 // httpRequest executes an HTTP request to the salesforce server and returns the response data in byte buffer.
