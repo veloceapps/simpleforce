@@ -190,6 +190,58 @@ func (client *Client) LoginWithAuthCode(loginURL string, code string) error {
 	return nil
 }
 
+// LoginRefreshToken signs into Salesforce using an OAuth refresh token.
+// The loginURL should be the instance URL (e.g., "https://myorg.scratch.my.salesforce.com").
+// The refreshToken is typically obtained from the sfdx auth URL or an initial OAuth flow.
+// clientID defaults to DefaultClientID ("PlatformCLI") if empty.
+func (client *Client) LoginRefreshToken(loginURL, refreshToken, clientID string) error {
+	if clientID == "" {
+		clientID = DefaultClientID
+	}
+
+	endpoint := fmt.Sprintf("%s/services/oauth2/token", strings.TrimRight(loginURL, "/"))
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+	data.Set("refresh_token", refreshToken)
+	data.Set("client_id", clientID)
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, strings.NewReader(data.Encode()))
+	if err != nil {
+		return errors.Wrap(err, "failed to create refresh token request")
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	resp, err := client.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "failed to submit refresh token request")
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read refresh token response")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("refresh token authentication failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var response BearerTokenResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling refresh token response '%s': %s", body, err)
+	}
+	if response.AccessToken == "" {
+		return errors.New("refresh token authentication failed: no access token in response")
+	}
+
+	client.sessionID = response.AccessToken
+	client.instanceURL = parseHost(response.InstanceURL)
+	log.Println(logPrefix, "Authenticated via refresh token.")
+	return nil
+}
+
 // LoginPassword signs into salesforce using password. token is optional if trusted IP is configured.
 // Ref: https://developer.salesforce.com/docs/atlas.en-us.214.0.api_rest.meta/api_rest/intro_understanding_username_password_oauth_flow.htm
 // Ref: https://developer.salesforce.com/docs/atlas.en-us.214.0.api.meta/api/sforce_api_calls_login.htm
